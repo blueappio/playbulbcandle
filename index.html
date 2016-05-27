@@ -5,6 +5,7 @@
     <title>PLAYBULB Candle Demo</title>
     <meta name="description" content="Control the color and effects of a PLAYBULB Candle with a Web Bluetooth app.">
     <meta http-equiv="origin-trial" content="1|g0kT35bpMj64sJz+VNzYNHCQQyg74t0CORWooeCKrqhDtg6xA1/hJIOnMlOROZ5zMVQJ8WYH+zTMO14S6sNcAg==|https://webbluetoothcg.github.io:443|WebBluetooth|1460390521">
+
     <link rel="icon" sizes="192x192" href="../favicon.png">
     <link rel="manifest" href="manifest.json">
 
@@ -62,12 +63,12 @@
     <div id="loading">
       <div class="mdl-spinner mdl-spinner--single-color mdl-js-spinner is-active"></div>
     </div>
-    <script src="https://vensi.github.io/blueapp.io/latest/blueapp.io.js"></script>
+    <script src="//blueappio.github.io/blueapp.io/blueapp.io.min.js"></script>
     <script src="playbulbCandle.js"></script>
     <script src="app.js" defer></script>
     <script>
       if('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('sw.js', { scope: '/demos/playbulb-candle-ba/' })
+        navigator.serviceWorker.register('sw.js', { scope: '/demos/playbulb-candle/' })
         .then(function(registration) {
           console.log("Service Worker Registered");
         });

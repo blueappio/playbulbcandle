@@ -12,6 +12,7 @@ self.addEventListener('install', function(e) {
         '/demos/playbulb-candle/color-wheel.png',
         '/demos/playbulb-candle/code.getmdl.io/1.0.4/material.green-light_green.min.css',
         '/demos/playbulb-candle/code.getmdl.io/1.0.4/material.min.js',
+
         'https://fonts.googleapis.com/icon?family=Material+Icons',
       ]).then(function() {
         return self.skipWaiting();
@@ -31,3 +32,4 @@ self.addEventListener('fetch', function(event) {
     })
   );
 });
+
