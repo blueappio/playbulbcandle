@@ -19,16 +19,17 @@
       this.device = null;
       this.server = null;
       this._characteristics = new Map();
-      this._isEffectSet = false;
       this._debug = false;
     }
     connect() {
-      let options = {filters:[{services:[ CANDLE_SERVICE_UUID ]}],
+      let options = {filters:[{
+                  name: 'PLAYBULB CANDLE',
+                }],
                      optionalServices: ['battery_service']};
       return navigator.bluetooth.requestDevice(options)
       .then(device => {
         this.device = device;
-        return device.gatt.connect();
+        return device.connectGATT();
       })
       .then(server => {
         this.server = server;
@@ -43,6 +44,20 @@
           server.getPrimaryService('battery_service').then(service => {
             return this._cacheCharacteristic(service, 'battery_level')
           }),
+          // TODO: Uncomment when device_information service is actually
+          // available in Chrome OS. http://crbug.com/532930
+          /*
+          server.getPrimaryService('device_information').then(service => {
+            return Promise.all([
+              this._cacheCharacteristic(service, 'serial_number_string'),
+              this._cacheCharacteristic(service, 'hardware_revision_string'),
+              this._cacheCharacteristic(service, 'firmware_revision_string'),
+              this._cacheCharacteristic(service, 'software_revision_string'),
+              this._cacheCharacteristic(service, 'manufacturer_name_string'),
+              this._cacheCharacteristic(service, 'pnp_id'),
+            ])
+          }),
+          */
         ]);
       })
     }
@@ -58,35 +73,19 @@
       return this._writeCharacteristicValue(CANDLE_DEVICE_NAME_UUID, data)
     }
     setColor(r, g, b) {
-      return Promise.resolve()
-      .then(_ => {
-        if (this._isEffectSet) {
-          // Turn off Color Effect first.
-          let data = [0x00, r, g, b, 0x05, 0x00, 0x01, 0x00];
-          return this._writeCharacteristicValue(CANDLE_EFFECT_UUID, new Uint8Array(data))
-        }
-      })
-      .then(_ => {
-        let data = [0x00, r, g, b];
-        return this._writeCharacteristicValue(CANDLE_COLOR_UUID, new Uint8Array(data))
-      })
-      .then(_ => [r,g,b]); // Returns color when fulfilled.
+      let data = [0x00, r, g, b];
+      return this._writeCharacteristicValue(CANDLE_COLOR_UUID, new Uint8Array(data))
+      .then(() => [r,g,b]); // Returns color when fulfilled.
     }
     setCandleEffectColor(r, g, b) {
       let data = [0x00, r, g, b, 0x04, 0x00, 0x01, 0x00];
       return this._writeCharacteristicValue(CANDLE_EFFECT_UUID, new Uint8Array(data))
-      .then(_ => {
-        this._isEffectSet = true;
-        return [r,g,b]; // Returns color when fulfilled.
-      });
+      .then(() => [r,g,b]); // Returns color when fulfilled.
     }
     setFlashingColor(r, g, b) {
       let data = [0x00, r, g, b, 0x00, 0x00, 0x1F, 0x00];
       return this._writeCharacteristicValue(CANDLE_EFFECT_UUID, new Uint8Array(data))
-      .then(_ => {
-        this._isEffectSet = true;
-        return [r,g,b]; // Returns color when fulfilled.
-      });
+      .then(() => [r,g,b]); // Returns color when fulfilled.
     }
     setPulseColor(r, g, b) {
       // We have to correct user color to make it look nice for real...
@@ -95,24 +94,15 @@
       let newBlue = Math.min(Math.round(b / 64) * 64, 255);
       let data = [0x00, newRed, newGreen, newBlue, 0x01, 0x00, 0x09, 0x00];
       return this._writeCharacteristicValue(CANDLE_EFFECT_UUID, new Uint8Array(data))
-      .then(_ => {
-        this._isEffectSet = true;
-        return [r,g,b]; // Returns color when fulfilled.
-      });
+      .then(() => [r,g,b]); // Returns color when fulfilled.
     }
     setRainbow() {
       let data = [0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x01, 0x00];
-      return this._writeCharacteristicValue(CANDLE_EFFECT_UUID, new Uint8Array(data))
-      .then(_ => {
-        this._isEffectSet = true;
-      });
+      return this._writeCharacteristicValue(CANDLE_EFFECT_UUID, new Uint8Array(data));
     }
     setRainbowFade() {
       let data = [0x01, 0x00, 0x00, 0x00, 0x03, 0x00, 0x26, 0x00];
-      return this._writeCharacteristicValue(CANDLE_EFFECT_UUID, new Uint8Array(data))
-      .then(_ => {
-        this._isEffectSet = true;
-      });
+      return this._writeCharacteristicValue(CANDLE_EFFECT_UUID, new Uint8Array(data));
     }
 
     /* Battery Service */
@@ -120,6 +110,33 @@
     getBatteryLevel() {
       return this._readCharacteristicValue('battery_level')
       .then(data => data.getUint8(0));
+    }
+
+    /* Device Info Service */
+
+    getSerialNumber() {
+      return this._readCharacteristicValue('serial_number_string')
+      .then(this._decodeString);
+    }
+    getHardwareRevision() {
+      return this._readCharacteristicValue('hardware_revision_string')
+      .then(this._decodeString);
+    }
+    getFirmwareRevision() {
+      return this._readCharacteristicValue('firmware_revision_string')
+      .then(this._decodeString);
+    }
+    getSoftwareRevision() {
+      return this._readCharacteristicValue('software_revision_string')
+      .then(this._decodeString);
+    }
+    getManufacturerName() {
+      return this._readCharacteristicValue('manufacturer_name_string')
+      .then(this._decodeString);
+    }
+    getPnpID() {
+      return this._readCharacteristicValue('pnp_id')
+      .then(this._decodeString);
     }
 
     /* Utils */
